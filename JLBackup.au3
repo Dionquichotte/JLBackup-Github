@@ -1,8 +1,9 @@
-; *******************************************************************************************************************************************************
+a; *******************************************************************************************************************************************************
 ; JL backup, program for moving joblistfiles on Tecan Twin (Green and Blue) system
 ; Sanquin IPB Laboratory of Biologicals
 ;
 ; version 1.3, 20 august 2014 by Dion Methorst
+; version 1.4, 3 february 2015
 ;
 ; changelog:
 ; v1.1	 added 5 more EL folders for new CLIS worklist , these numbers are arbitrary and will be replaced for real world worklists later
@@ -12,10 +13,10 @@
 ; 		 line 85-100, added errorhandling to check for existing ELn folders
 ;		 added checking of existing files in joblist folder, existing joblist files in folder are not overwritten.
 ;		 adjusted messagebox icon and messages for clarity
+; v1.4	 reading EL folders and joblistfiles from ini file:
 ;
+; TO DO ZIp To Archive
 ;
-; Future changes: (?)open for debate... sort of... :)
-; moving joblist array to ini file for manual setting of worklists, lims-number and position in array == setting of ELn folder
 ;
 ;
 ; *******************************************************************************************************************************************************
@@ -34,16 +35,16 @@
 ; script to move Tecan Freedom joblist files
 ; The script executes the following procedure:
 ;
-;			FileMove("C:\APPS\EVO\job\EL" & $ELB & $Blue[$i] & $File & ".twl", "C:\;APPS\EVO\JLbackup" & $Blue[$i] & $File & ".twl", 1 + 8)
-;			FileCopy("C:\APPS\EVO\JLbackup" & $Blue[$i] & $File & ".twl", "C:\APPS\E;VO\archief" & $Blue[$i] & $File & "_" & $filedatum & ".twl", 1 + 8)
-;			FileSetTime("C:APPS\EVO\JLbackup" & $Blue[$i] & $File  & ".twl", "", 1)
+;			FileMove("C:\APPS\EVO\JOB\" & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl", "C:\APPS\EVO\JLbackup\" & $Blue[$B][1] & $File & ".twl", 1 + 8)
+;			FileCopy("C:\APPS\EVO\JLbackup\" & $Blue[$B][1] & $File & ".twl", "C:\APPS\EVO\archief\" & $Blue[$B][1] & $File & "_" & $moveDate & ".twl", 1 + 8)
+;			FileSetTime("C:APPS\EVO\JLbackup\" & $Blue[$B][1] & $File  & ".twl", "", 1)
 ;
-; $f is amount of ELn folders in C:\APPS\EVO\JOB\
-; Files are moved from C:\APPS\EVO\JOB\ELn (n= 1 tot $f)
+; $Blue[$B][0] is the EL[$B] folder in C:\APPS\EVO\JOB\EL[$B]
+; Files are moved from C:\APPS\EVO\JOB\EL[$B] ($B= 1 tot Ubound$Blue)
 ; Files are moved to C:\APPS\EVO\JLbackup
-; The original files are copied from C:\APPS\EVO\JLbackup\ to C:\APPS\EVO\Archief,
+; The joblistfiles are then copied from C:\APPS\EVO\JLbackup\ to C:\APPS\EVO\Archief,
 ; time of copying is set to JLBackup folder and all files as file attribute "date created"
-; date and timestamp are inserted into the filename of files in \ARCHIEF
+; date and timestamp are inserted into the filename of files in C:\APPS\EVO\Archief
 ;
 ; function ResetJoblist()
 ;
@@ -51,41 +52,61 @@
 ; this function reverses the MoveJoblist() and puts the files back into the EL Joblist folders
 ; existing files in the joblistfolders are checked out first in order that existing joblist files are NOT overwritten!!!
 ;
-;			; move files $Blue, 1st check if file already in joblist folder, if NOT then joblists ar moved to backup folder and archief, timestamp added.
-;			; existing files are not overwritten
-;			If FileExists("C:\APPS\EVO\Job\EL" & $ELB  & $Blue[$i] & $File & ".twl") Then
-;				MsgBox(4096, "JLBackup", "C:\APPS\EVO\Job"  & $Blue[$i] & $File & ".twl" & "already exists in joblist folder!" &  @CRLF & _
+;			Before moving files, 1st check if file already in joblist folder, if NOT then joblists ar moved to backup folder and archief, timestamp added.
+;			existing files are not overwritten
+;			If FileExists("C:\APPS\EVO\Job\" & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl") Then
+;				MsgBox(4096, "JLBackup", "C:\APPS\EVO\Job\"  & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl already exists in joblist folder!" &  @CRLF & _
 ;				"This file is not resetted and will be kept in C:\apps\EVO\JLBackup")
 ;			Else
-;				FileMove("C:\APPS\EVO\JLbackup"  & $Blue[$i] & $File & ".twl", "C:\APPS\EVO\job\EL" & $ELB & $Blue[$i] & $File & ".twl", 0 + 8)
-;				FileSetTime("C:\APPS\EVO\job\EL" & $ELB & $Blue[$i] & $File  & ".twl", "", 1)
+;				FileMove("C:\APPS\EVO\JLbackup\" & $Blue[$B][1] & $File & ".twl", "C:\APPS\EVO\Job\" & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl", 0 + 8)
+;				FileSetTime("C:\APPS\EVO\Job\" & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl", "", 1)
 ;			EndIf
 ;
 ; The script executes the following procedure:
 ; Files are copied from C:\APPS\EVO\JLbackup
-; Files are copied to C:\APPS\EVO\JOB\ELn (n= 1 tot $f)
+; Files are copied to C:\APPS\EVO\JOB\ELn (n= 1 tot $B)
 ;
 ; funcrtion DeleteJoblist()
 ;
 ; script to delete ALL joblists from C:\APPS\EVO\job\ELn folders
 ; if not backupped beforehand, all files will be lost forevermore :)
-; therefore the main() gui pops a messagebox whether you're sure about throwing away your joblists
+; therefore the main() gui pops a message if you're sure about throwing away your joblists
 ;
-;			FileDelete("C:\apps\EVO\job\EL" & $EL)
+;			FileDelete("C:\apps\EVO\job\EL" & $EL) ; deletes *.* in folder
 ;
-; joblist IDs are defined in an array of 10 variables
-; [0-4][10-14] for EVO Blue and [5-9][15-20] for EVO Green
-;
-; This array can be expanded to as many files as you wish : )
-; the array is put in a loop which designates a number to the ELx [1-5] folders
-; the loop is executed 5 times, thus EL1, EL2... EL5 are named
+; the array is put in a loop which designates a number to the ELx [1-x] folders
+; the loop is executed x-1 times, thus EL1, EL2... EL5 are named
 ; This loop can also be extended up to as many ELx folders as you wish
 ;
-;******************************************************************************************************************************************************
+;
+; C:\APPS\EVO\JLbackup\Jlbackup.ini   >> a default JLBackup is created after deletion of the ini file.
+;
+;[Blue]
+;EL1= \682_2_		 infliximab = remicade
+;EL2= \923_2_		enbrel = etanercept
+;EL3 = \683_2_		adalimumab = humera
+;EL4 = \697_2_		rituximab = mapthera
+;EL5 = \800_2_		trastuzumab = herceptin
+;EL6 = \856_2_		tocilizumab
+;EL7 = \922_2_		golimumab
+;EL8 = \999_2_		bloedspot ADA
+;EL9 = \998_2_		bloedspot ETN
+;EL10 = \997_2_
 
+;[Green]
+;EL1 = \682_1_
+;EL2 = \923_1_
+;EL3 = \683_1_
+;EL4 = \697_1_
+;EL5 = \800_1_
+;EL6 = \856_1_
+;EL7 = \922_1_
+;EL8 = \999_1_
+;EL9 = \998_1_
+;
+;******************************************************************************************************************************************************
 ; Start of script
 
-; library inclusion
 #include <Array.au3>
 #include <file.au3>
 #include <Date.au3>
@@ -94,53 +115,21 @@
 #include <GuiStatusBar.au3>
 #include <WinAPI.au3>
 #include <Constants.au3>
+#include <Math.au3>
 
-; Joblist backup data array
-Global $Blue[10] ;$Blue[$i]
+;on error msgbox
 
-;count folders in C:\apps\evo\job\ + errorhandling if none at all
-Local $FileList = _FileListToArray("C:\APPS\EVO\Job")
-	If @error = 1 Then
-		MsgBox(0, "", "No Folders Found.")
-		Exit
-	EndIf
-	If @error = 4 Then
-		MsgBox(0, "", "No Files Found.")
-		Exit
-	EndIf
-;_ArrayDisplay($FileList, "$FileList") ;for testing purposes
+If not FileExists("C:\APPS\EVO\JLbackup\Jlbackup.ini") then
+	Local $BlueAssay = "EL1=\682_2_" & @CRLF &"EL2=\923_2_" & @CRLF &"EL3=\683_2_" & @CRLF &"EL4 =\697_2_" & @CRLF &"EL5 =\800_2_" _
+	& @CRLF &"EL6=\856_2_" & @CRLF &"EL7=\922_2_" & @CRLF &"EL8=\999_2_" & @CRLF &"EL9=\998_2_"
+	Local $GreenAssay = "EL1=\682_1_" & @CRLF &"EL2=\923_1_" & @CRLF &"EL3=\683_1_" & @CRLF &"EL4=\697_1_" & @CRLF &"EL5 =\800_1_" _
+	& @CRLF &"EL6=\856_1_" & @CRLF &"EL7=\922_1_" & @CRLF &"EL8=\999_1_" & @CRLF &"EL9=\998_1_"
+	IniWriteSection("C:\APPS\EVO\JlBackup\Jlbackup.ini", "Blue", $BlueAssay)
+	IniWriteSection("C:\APPS\EVO\JLbackup\Jlbackup.ini", "Green", $GreenAssay)
+	Endif
 
-; Retrieve amount of ELn folders for setting size of joblist array
-$f = $Filelist[0]
-
-; joblist array EVO Blue
-Global $Blue[$f+1] ;$Blue[$i]
-
-	$Blue[0] = "EVO Blue" ;IP adress/Sanquin number? or username? get it from logfile or ini
-	$Blue[1] = "\682_2_" ; infliximab = remicade
-	$Blue[2] = "\923_2_" ; enbrel = etanercept
-	$Blue[3] = "\683_2_" ; adalimumab = humera
-	$Blue[4] = "\697_2_" ; rituximab = mapthera
-	$Blue[5] = "\800_2_" ; trastuzumab = herceptin
-	$Blue[6] = "\856_2_" ; tocilizumab
-	$Blue[7] = "\922_2_" ; golimumab
-	;$Blue[8] = "\827_2_" ; natalizumab
-	;$Blue[9] = "\846_2_" ; abatacept
-	;$Blue[10] = "\xxx_2_"
-
-; joblist array EVO Green
-Global $Green[$f+1] ;$Green[$p]
-	$Green[0] = "EVO Green"
-	$Green[1] = "\682_1_"
-	$Green[2] = "\923_1_"
-	$Green[3] = "\683_1_"
-	$Green[4] = "\697_1_"
-	$Green[5] = "\800_1_"
-	$Green[6] = "\856_1_"
-	$Green[7] = "\922_1_"
-	;$Green[8] = "\827_1_"
-	;$Green[9] = "\846_1_" ; abatacept
-	;$Green[10] = "\xxx_1_"
+$Blue = IniReadSection("C:\APPS\EVO\JLbackup\Jlbackup.ini", "Blue")
+$Green = IniReadSection("C:\APPS\EVO\JLbackup\Jlbackup.ini", "Green")
 
 ;_ArrayDisplay($Blue)
 ;_ArrayDisplay($Green)
@@ -148,101 +137,84 @@ Global $Green[$f+1] ;$Green[$p]
 
 ; function for use in GUI, this script transfers all  Joblist files to the C:\apps\EVO\archief folder
 Func MoveJoblist()
-dim $EL
-dim $ELB
-dim $ELG
+
 dim $File = ""
-dim $filedatum
+dim $moveDate
 
-$filedatum = @mday & @mon & @year & @hour & @min & @sec
+;_ArrayDisplay($Blue)
+;_ArrayDisplay($Green)
 
-For $EL = 1 to Ubound($Blue)-1 ; loop to move EVO blue joblists corresponding to array
+local $moveDate = @mday & @mon & @year & @hour & @min & @sec
 
-			$ELB = $EL	; may seem obsolete but is for future use when EVO BLue and Green 'grow out of sync'
-			$ELG = $EL	; and the loop has to be divided in two seperate parts
-			$i = $ELB
-			$p = $ELG
+For $B = 1 to Ubound($Blue)-1
 
-			For $File = 1 to 5
-
+		For $File = 1 to 5
 			; move files $Blue, joblists ar moved to backup folder and archief, timestamp added
-			FileMove("C:\APPS\EVO\job\EL" & $ELB & $Blue[$i] & $File & ".twl", "C:\APPS\EVO\JLbackup" & $Blue[$i] & $File & ".twl", 1 + 8)
-			FileCopy("C:\APPS\EVO\JLbackup" & $Blue[$i] & $File & ".twl", "C:\APPS\EVO\archief" & $Blue[$i] & $File & "_" & $filedatum & ".twl", 1 + 8)
-			FileSetTime("C:APPS\EVO\JLbackup" & $Blue[$i] & $File  & ".twl", "", 1)
+			FileMove("C:\APPS\EVO\JOB\" & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl", "C:\APPS\EVO\JLbackup\" & $Blue[$B][1] & $File & ".twl", 1 + 8)
+			FileCopy("C:\APPS\EVO\JLbackup\" & $Blue[$B][1] & $File & ".twl", "C:\APPS\EVO\archief\" & $Blue[$B][1] & $File & "_" & $moveDate & ".twl", 1 + 8)
+			FileSetTime("C:APPS\EVO\JLbackup\" & $Blue[$B][1] & $File  & ".twl", "", 1)
+		next
+Next
 
+For $G = 1 to Ubound($Green)-1
+
+		For $File = 1 to 5
 			; move files $Green, joblists ar moved to backup folder and archief, timestamp added
-			FileMove("C:\APPS\EVO\job\EL" & $ELG & $Green[$p] & $File & ".twl", "C:\APPS\EVO\JLbackup" & $Green[$p] & $File & ".twl", 1 + 8)
-			FileCopy("C:\APPS\EVO\JLbackup" & $Green[$p] & $File & ".twl", "C:\APPS\EVO\archief" & $Green[$p] & $File & "_" & $filedatum & ".twl", 1 + 8)
-			FileSetTime("C:APPS\EVO\JLbackup" & $Green[$p] & $File  & ".twl", "", 1)
-
-			next
-
+			FileMove("C:\APPS\EVO\JOB\" & $Green[$G][0] & $Green[$G][1] & $File & ".twl", "C:\APPS\EVO\JLbackup\" & $Green[$G][1] & $File & ".twl", 1 + 8)
+			FileCopy("C:\APPS\EVO\JLbackup\" & $Green[$G][1] & $File & ".twl", "C:\APPS\EVO\archief\" & $Green[$G][1] & $File & "_" & $moveDate & ".twl", 1 + 8)
+			FileSetTime("C:APPS\EVO\JLbackup\" & $Green[$G][1] & $File  & ".twl", "", 1)
+		next
 Next
 
 EndFunc
 ;================== END FUNCTION move Joblist =====================================================================================================
-
 ;================== START FUNCTION Reset Joblist ========================================================================================================
 Func ResetJoblist()
 
-dim $EL
-dim $ELB
-dim $ELG
-dim $File = ""
-dim $filedatum
+Local $File = ""
+Local $moveDate
 
-For $EL = 1 to Ubound($Blue)-1 ; loop to move EVO blue joblists corresponding to array
-
-			$ELB = $EL	; may seem obsolete but is for future use when EVO BLue and Green 'grow out of sync'
-			$ELG = $EL	; and the loop has to be divided in two seperate parts
-			$i = $ELB
-			$p = $ELG
+For $B = 1 to Ubound($Blue)-1
 
 		For $File = 1 to 5
-
-			; move files $Blue, 1st check if file already in joblist folder, if NOT then joblists ar moved to backup folder and archief, timestamp added.
-			; existing files are not overwritten
-			If FileExists("C:\APPS\EVO\Job\EL" & $ELB  & $Blue[$i] & $File & ".twl") Then
-				MsgBox(4096, "JLBackup", "C:\APPS\EVO\Job"  & $Blue[$i] & $File & ".twl" & "already exists in joblist folder!" &  @CRLF & _
+			If FileExists("C:\APPS\EVO\Job\" & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl") Then
+				MsgBox(4096, "JLBackup", "C:\APPS\EVO\Job\"  & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl already exists in joblist folder!" &  @CRLF & _
 				"This file is not resetted and will be kept in C:\apps\EVO\JLBackup")
 			Else
-				FileMove("C:\APPS\EVO\JLbackup"  & $Blue[$i] & $File & ".twl", "C:\APPS\EVO\job\EL" & $ELB & $Blue[$i] & $File & ".twl", 0 + 8)
-				FileSetTime("C:\APPS\EVO\job\EL" & $ELB & $Blue[$i] & $File  & ".twl", "", 1)
+				FileMove("C:\APPS\EVO\JLbackup\" & $Blue[$B][1] & $File & ".twl", "C:\APPS\EVO\Job\" & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl", 0 + 8)
+				FileSetTime("C:\APPS\EVO\Job\" & $Blue[$B][0] & $Blue[$B][1] & $File & ".twl", "", 1)
 			EndIf
+		next
 
-			; move files $Green, as above
-			If FileExists("C:\APPS\EVO\Job\EL" & $ELG & $Green[$p] & $File & ".twl") Then
-				MsgBox(4096, "JLBackup", "C:\APPS\EVO\Job"  & $Green[$i] & $File & ".twl" & "already exists in joblist folder!" &  @CRLF & _
+Next
+
+For $G = 1 to Ubound($Green)-1
+
+		For $File = 1 to 5
+			If FileExists("C:\APPS\EVO\Job\" & $Green[$G][0] & $Green[$G][1] & $File & ".twl") Then
+				MsgBox(4096, "JLBackup", "C:\APPS\EVO\Job\"  & $Green[$G][0] & $Green[$G][1] & $File & ".twl already exists in joblist folder!" &  @CRLF & _
 				"This file is not resetted and will be kept in C:\apps\EVO\JLBackup")
-			ELse
-				FileMove("C:\APPS\EVO\JLbackup" & $Green[$p] & $File & ".twl", "C:\APPS\EVO\job\EL" & $ELG & $Green[$p] & $File & ".twl", 0 + 8)
-				FileSetTime("C:\APPS\EVO\job\EL" & $ELG & $Green[$p] & $File  & ".twl", "", 1)
+			Else
+				FileMove("C:\APPS\EVO\JLbackup\" & $Green[$G][1] & $File & ".twl", "C:\APPS\EVO\Job\" & $Green[$G][0] & $Green[$G][1] & $File & ".twl", 0 + 8)
+				FileSetTime("C:\APPS\EVO\Job\" & $Green[$G][0] & $Green[$G][1] & $File & ".twl", "", 1)
 			EndIf
-
 		next
 
 Next
 
 EndFunc
 ;================== END FUNCTION Reset Joblist ================================================================================================
-
 ;================== START FUNCTION Delete Joblist ========================================================================================================
 Func DeleteJoblist()
 
-dim $EL
-dim $File = ""
-; n = 1/5, ELn folders: EL1, EL2, etc
-; there is a maximum of 5 joblists per EL folder
+$max = _Max ($Green[0][0], $Blue[0][0])
 
-For $EL = 1 to Ubound($BLue)-1
-			;For $File = 1 to 5
-			FileDelete("C:\apps\EVO\job\EL" & $EL)
-			;Next
+For $EL = 1 to $max
+			FileDelete("C:\apps\EVO\job\EL" & $EL) ; deletes *.* in folder
 Next
 
 EndFunc
 ;================== END FUNCTION Delete Joblist ================================================================================================
-
 ;================== Start Main() ==============================================================================================================
 
 ; GUI Creation
