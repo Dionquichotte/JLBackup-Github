@@ -6,6 +6,7 @@
 ; version 1.4, 03 february 2015
 ; version 1.5, 17 september 2015
 ; version 1.6, 23 september 2015
+; version 1.7, 23 september 2015
 ;
 ; changelog:
 ; v1.1		added 5 more EL folders for new CLIS worklist , these numbers are arbitrary and will be replaced for real world worklists later
@@ -19,6 +20,7 @@
 ; v1.5		Added RenameJoblist function: Resets the count of the joblists in each ELx folder
 ; v1.6		Rename Joblist function opening joblist folder to check joblists.
 ;			Transparent GUI
+; v1.7		added buttons to open EVO file folders
 ;
 ; TO DO ZIp To Archive?
 ;
@@ -124,7 +126,7 @@
 ;on error msgbox
 
 If not FileExists("C:\APPS\EVO\JLbackup\Jlbackup.ini") then
-	Local $BlueAssay = "EL1=\682_2_" & @CRLF &"EL2=\923_2_" & @CRLF &"EL3=\683_2_" & @CRLF &"EL4 =\697_2_" & @CRLF &"EL5 =\800_2_" _
+	Local $BlueAssay = "EL1=\682_2_" & @CRLF &"EL2=\923_2_" & @CRLF &"EL3=\683_2_" & @CRLF &"EL4=\697_2_" & @CRLF &"EL5=\800_2_" _
 	& @CRLF &"EL6=\856_2_" & @CRLF &"EL7=\922_2_" & @CRLF &"EL8=\999_2_" & @CRLF &"EL9=\998_2_"
 	Local $GreenAssay = "EL1=\682_1_" & @CRLF &"EL2=\923_1_" & @CRLF &"EL3=\683_1_" & @CRLF &"EL4=\697_1_" & @CRLF &"EL5 =\800_1_" _
 	& @CRLF &"EL6=\856_1_" & @CRLF &"EL7=\922_1_" & @CRLF &"EL8=\999_1_" & @CRLF &"EL9=\998_1_"
@@ -225,18 +227,21 @@ Func RenameJoblist()
 
  $aFileList = _FileListToArray("C:\apps\EVO\job\", "*")
  $aFileList2 = _FileListToArray("C:\apps\EVO\job\", Default, Default, True)
+;_arraydisplay($aFilelist2)
 
+$JLcount = 1
 For $i = 1 to Ubound($aFileList2)-1
-	  $number = 1
 	   $aJobList = _FileListToArray("C:\apps\EVO\job\"& $aFileList[$i] & "\" , "*.twl")
+	   ;_arraydisplay($aJobList)
 	  for $j = 1 to Ubound($aJobList)-1
 		 $pos =stringinstr($aJobList[$j], ".", 0,1)-1
-		 filemove($aFileList2[$i] & "\" & $aJobList[$j] , $aFileList2[$i] & "\" & StringReplace($aJobList[$j], $pos, $number & ".twl"), 1 +8)
-		 $number = $number + 1
+		 filemove($aFileList2[$i] & "\" & $aJobList[$j] , $aFileList2[$i] & "\" & StringReplace($aJobList[$j], $pos, $j & ".twl"), 1 +8)
+		 $JLcount = $JLcount + 1
 	  next
-    if $number > 5 then ExitLoop
-
+	  ;msgbox(0, "", $JLcount)
 Next
+
+if $JLcount >5 then msgbox($MB_ICONWARNING, "Opgepast!", "Er zijn meer dan " & $JLcount & " joblists aanwezig" & @CRLF & "Dat zijn er meer dan 5!")
 
 EndFunc
 ;================== END FUNCTION Rename Joblist ================================================================================================
@@ -244,7 +249,7 @@ EndFunc
 
 ; GUI Creation
 GUISetFont(9, 500, 2, 45)
-Global const $JLbu = GuiCreate("EVO Joblist Backup", 200, 165, -1, -1, -1, BitOr($WS_EX_TOOLWINDOW, $WS_EX_LAYERED)) ;BitOr($WS_EX_TRANSPARENT, $WS_EX_TOOLWINDOW , $WS_EX_LAYERED))
+Global const $JLbu = GuiCreate("EVO Joblist Backup", 255, 165, -1, -1, -1, BitOr($WS_EX_TOOLWINDOW, $WS_EX_LAYERED)) ;BitOr($WS_EX_TRANSPARENT, $WS_EX_TOOLWINDOW , $WS_EX_LAYERED))
 GuiSetIcon("B:\Programmeren\programmeren_Dion\TECAN\EVO joblist backup Allergie\icons\JLbackup2.ico", 0)
 ;DllCall("user32.dll", "int", "AnimateWindow", "hwnd", $JLbu, "int", 1000, "long", 0x00080000) ; fade-in
 
@@ -254,6 +259,12 @@ $MoveJoblist = GUICtrlCreateButton("Move Joblists",15,40,165,25)
 $ResetJoblist = GUICtrlCreateButton("Reset all Joblists",15,70,165,25)
 $DeleteButton = GUICtrlCreateButton("Delete Joblists",15,100,165,25)
 $ExitButton = GUICtrlCreateButton("Exit",15,130,165,25)
+
+$Jobfile = GUICtrlCreateButton("JOB",190,10,50,25)
+$TplFile = GUICtrlCreateButton("TPL",190,40,50,25)
+$AscFile = GUICtrlCreateButton("ASC",190,70,50,25)
+$TplascFile = GUICtrlCreateButton("TPLASC",190,100,50,25)
+$ArchFile = GUICtrlCreateButton("Archief",190,130,50,25)
 
 ; Close Group
 GUICtrlCreateGroup("",-99,-99,1,1)
@@ -271,13 +282,37 @@ $guimsg = GUIGetMsg()
 			ExitLoop
 		 Case $guimsg = $RenameJoblist
 			RenameJoblist()
-			MsgBox(0,"Joblist Count","Joblists Count reset")
-
+			   MsgBox(0,"Joblist Count","Joblists Count Done!")
+				  Local $iPID = Run("explorer.exe " & "C:\Apps\EVO\Job")
+				  WinWait("[CLASS:explorer]", "", 1)
+				  Sleep(10)
+				  ProcessClose($iPID)
+			   MsgBox ($MB_ICONINFORMATION + $MB_TOPMOST + $MB_SETFOREGROUND, "", "Check Joblists!",5)
+		 Case $guimsg = $Jobfile
 			Local $iPID = Run("explorer.exe " & "C:\Apps\EVO\Job")
 			WinWait("[CLASS:explorer]", "", 1)
 			Sleep(10)
 			ProcessClose($iPID)
-			MsgBox ($MB_ICONINFORMATION + $MB_TOPMOST + $MB_SETFOREGROUND, "", "Check Joblists!",5)
+		 Case $guimsg = $TplFile
+			Local $iPID = Run("explorer.exe " & "C:\Apps\EVO\TPL")
+			WinWait("[CLASS:explorer]", "", 1)
+			Sleep(10)
+			ProcessClose($iPID)
+		 Case $guimsg = $AscFile
+			Local $iPID = Run("explorer.exe " & "C:\Apps\EVO\ASC")
+			WinWait("[CLASS:explorer]", "", 1)
+			Sleep(10)
+			ProcessClose($iPID)
+		 Case $guimsg = $TplascFile
+			Local $iPID = Run("explorer.exe " & "C:\Apps\EVO\TPLASC")
+			WinWait("[CLASS:explorer]", "", 1)
+			Sleep(10)
+			ProcessClose($iPID)
+		 Case $guimsg = $ArchFile
+			Local $iPID = Run("explorer.exe " & "C:\Apps\EVO\Archief")
+			WinWait("[CLASS:explorer]", "", 1)
+			Sleep(10)
+			ProcessClose($iPID)
 		 Case $guimsg = $MoveJoblist
 			MoveJoblist()
 			MsgBox(0,"Move Joblist","Joblists moved to C:\APPS\EVO\JOB\JLbackup")
