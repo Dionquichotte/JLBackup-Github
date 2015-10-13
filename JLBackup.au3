@@ -1,23 +1,23 @@
-a; *******************************************************************************************************************************************************
+; *******************************************************************************************************************************************************
 ; JL backup, program for moving joblistfiles on Tecan Twin (Green and Blue) system
 ; Sanquin IPB Laboratory of Biologicals
 ;
 ; version 1.3, 20 august 2014 by Dion Methorst
-; version 1.4, 3 february 2015
+; version 1.4, 03 february 2015
+; version 1.5, 17 september 2015
 ;
 ; changelog:
-; v1.1	 added 5 more EL folders for new CLIS worklist , these numbers are arbitrary and will be replaced for real world worklists later
-; v1.2	 line 104 and 119, Enbrel changed worklistnumber 699 to 923
-; v1.3	 line 109 & 123, arrays with worklistnumbers for EVO $Blue[7] and $Green[7] changed to Golimumab
-; 		 line 85-100, size of arrays $Blue and $Green now set as amount of ELn folders counted in C:\Apps\EVO\Job\
-; 		 line 85-100, added errorhandling to check for existing ELn folders
-;		 added checking of existing files in joblist folder, existing joblist files in folder are not overwritten.
-;		 adjusted messagebox icon and messages for clarity
-; v1.4	 reading EL folders and joblistfiles from ini file:
+; v1.1		added 5 more EL folders for new CLIS worklist , these numbers are arbitrary and will be replaced for real world worklists later
+; v1.2		line 104 and 119, Enbrel changed worklistnumber 699 to 923
+; v1.3		line 109 & 123, arrays with worklistnumbers for EVO $Blue[7] and $Green[7] changed to Golimumab
+; 			line 85-100, size of arrays $Blue and $Green now set as amount of ELn folders counted in C:\Apps\EVO\Job\
+; 			line 85-100, added errorhandling to check for existing ELn folders
+;			added checking of existing files in joblist folder, existing joblist files in folder are not overwritten.
+;			adjusted messagebox icon and messages for clarity
+; v1.4		reading EL folders and joblistfiles from ini file:
+; v1.5		Added RenameJoblist function: Resets the count of the joblists in each ELx folder
 ;
-; TO DO ZIp To Archive
-;
-;
+; TO DO ZIp To Archive?
 ;
 ; *******************************************************************************************************************************************************
 ;
@@ -215,20 +215,44 @@ Next
 
 EndFunc
 ;================== END FUNCTION Delete Joblist ================================================================================================
+;================== START FUNCTION Rename Joblist ========================================================================================================
+
+Func RenameJoblist()
+
+ $aFileList = _FileListToArray("C:\apps\EVO\job\", "*")
+ $aFileList2 = _FileListToArray("C:\apps\EVO\job\", Default, Default, True)
+
+For $i = 1 to Ubound($aFileList2)-1
+	  $number = 1
+	   $aJobList = _FileListToArray("C:\apps\EVO\job\"& $aFileList[$i] & "\" , "*.twl")
+	  for $j = 1 to Ubound($aJobList)-1
+		 $pos =stringinstr($aJobList[$j], ".", 0,1)-1
+		 filemove($aFileList2[$i] & "\" & $aJobList[$j] , $aFileList2[$i] & "\" & StringReplace($aJobList[$j], $pos, $number & ".twl"), 1 +8)
+		 $number = $number + 1
+	  next
+    if $number > 5 then ExitLoop
+
+Next
+
+EndFunc
+;================== END FUNCTION Rename Joblist ================================================================================================
 ;================== Start Main() ==============================================================================================================
 
 ; GUI Creation
-GuiCreate("JL Backup", 200, 200)
-GUISetBkColor(0xE0FFFF)
+;GuiCreate("JL Backup", 200, 200)
+;GUISetBkColor(0xE0FFFF)
 GUISetFont(9, 500, 2, 45)
-GuiCreate("EVO Joblist Backup", 200, 150)
-GuiSetIcon("C:\Laboratorium\programmeren\TECAN\EVO joblist backup Allergie\icon\JLbackup2.ico", 0)
+Global const $SanTe = GuiCreate("EVO Joblist Backup", 200, 170, -1, -1, -1, BitOr($WS_EX_TRANSPARENT, $WS_EX_TOOLWINDOW ))
+GuiSetIcon("B:\Programmeren\programmeren_Dion\TECAN\EVO joblist backup Allergie\icons\JLbackup2.ico", 0)
+DllCall("user32.dll", "int", "AnimateWindow", "hwnd", $Sante, "int", 1000, "long", 0x00080000) ; fade-in
 
 ; Button advanced, menu
-$MoveJoblist = GUICtrlCreateButton("Move Joblists",20,15,165,25)
-$ResetJoblist = GUICtrlCreateButton("Reset all Joblists",20,45,165,25)
-$ExitButton = GUICtrlCreateButton("Exit",20,75,165,25)
+$RenameJoblist = GUICtrlCreateButton("Set Joblists 1 to 5",20,15,165,25)
+$MoveJoblist = GUICtrlCreateButton("Move Joblists",20,45,165,25)
+$ResetJoblist = GUICtrlCreateButton("Reset all Joblists",20,75,165,25)
 $DeleteButton = GUICtrlCreateButton("Delete Joblists",20,105,165,25)
+$ExitButton = GUICtrlCreateButton("Exit",20,135,165,25)
+
 
 ; Close Group
 GUICtrlCreateGroup("",-99,-99,1,1)
@@ -241,19 +265,24 @@ GuiSetState(@SW_SHOW)
 While 1
 $guimsg = GUIGetMsg()
 	Select
-		Case $guimsg = $GUI_EVENT_CLOSE
+		 Case $guimsg = $GUI_EVENT_CLOSE
 			ExitLoop
-		Case $guimsg = $MoveJoblist
-			MoveJoblist()
-			MsgBox(0,"Move Joblist","Joblists moved to C:\APPS\EVO\JLbackup")
+		 Case $guimsg = $RenameJoblist
+			RenameJoblist()
+			MsgBox(0,"Joblist Count","Joblists Count reset")
 		;Exit
-		Case $guimsg = $ResetJoblist
+		 Case $guimsg = $MoveJoblist
+			MoveJoblist()
+			MsgBox(0,"Move Joblist","Joblists moved to C:\APPS\EVO\JOB\JLbackup")
+		;Exit
+		 Case $guimsg = $ResetJoblist
 			Resetjoblist()
 			MsgBox(0,"Reset Joblist","Joblists resetted to C:\APPS\EVO\Job")
 		;Exit
-		Case $guimsg = $ExitButton
+		 Case $guimsg = $ExitButton
 			Exit
-		Case $guimsg = $DeleteButton
+		;Exit
+		 Case $guimsg = $DeleteButton
 			Dim $iMsgBoxAnswer
 			$iMsgBoxAnswer = MsgBox(52,"DELETE Joblists"," Weet u dit heel erg zeker?")
 			Select
@@ -266,5 +295,4 @@ $guimsg = GUIGetMsg()
 			EndSelect
 	EndSelect
 Wend
-
 ;================== END Main() ==============================================================================================================
