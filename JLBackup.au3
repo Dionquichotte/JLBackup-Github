@@ -5,6 +5,7 @@
 ; version 1.3, 20 august 2014 by Dion Methorst
 ; version 1.4, 03 february 2015
 ; version 1.5, 17 september 2015
+; version 1.6, 23 september 2015
 ;
 ; changelog:
 ; v1.1		added 5 more EL folders for new CLIS worklist , these numbers are arbitrary and will be replaced for real world worklists later
@@ -16,6 +17,8 @@
 ;			adjusted messagebox icon and messages for clarity
 ; v1.4		reading EL folders and joblistfiles from ini file:
 ; v1.5		Added RenameJoblist function: Resets the count of the joblists in each ELx folder
+; v1.6		Rename Joblist function opening joblist folder to check joblists.
+;			Transparent GUI
 ;
 ; TO DO ZIp To Archive?
 ;
@@ -114,6 +117,7 @@
 #include <GUIConstantsEx.au3>
 #include <GuiStatusBar.au3>
 #include <WinAPI.au3>
+#include <WindowsConstants.au3>
 #include <Constants.au3>
 #include <Math.au3>
 
@@ -239,24 +243,22 @@ EndFunc
 ;================== Start Main() ==============================================================================================================
 
 ; GUI Creation
-;GuiCreate("JL Backup", 200, 200)
-;GUISetBkColor(0xE0FFFF)
 GUISetFont(9, 500, 2, 45)
-Global const $SanTe = GuiCreate("EVO Joblist Backup", 200, 170, -1, -1, -1, BitOr($WS_EX_TRANSPARENT, $WS_EX_TOOLWINDOW ))
+Global const $JLbu = GuiCreate("EVO Joblist Backup", 200, 165, -1, -1, -1, BitOr($WS_EX_TOOLWINDOW, $WS_EX_LAYERED)) ;BitOr($WS_EX_TRANSPARENT, $WS_EX_TOOLWINDOW , $WS_EX_LAYERED))
 GuiSetIcon("B:\Programmeren\programmeren_Dion\TECAN\EVO joblist backup Allergie\icons\JLbackup2.ico", 0)
-DllCall("user32.dll", "int", "AnimateWindow", "hwnd", $Sante, "int", 1000, "long", 0x00080000) ; fade-in
+;DllCall("user32.dll", "int", "AnimateWindow", "hwnd", $JLbu, "int", 1000, "long", 0x00080000) ; fade-in
 
 ; Button advanced, menu
-$RenameJoblist = GUICtrlCreateButton("Set Joblists 1 to 5",20,15,165,25)
-$MoveJoblist = GUICtrlCreateButton("Move Joblists",20,45,165,25)
-$ResetJoblist = GUICtrlCreateButton("Reset all Joblists",20,75,165,25)
-$DeleteButton = GUICtrlCreateButton("Delete Joblists",20,105,165,25)
-$ExitButton = GUICtrlCreateButton("Exit",20,135,165,25)
-
+$RenameJoblist = GUICtrlCreateButton("Set Joblists 1 to 5",15,10,165,25)
+$MoveJoblist = GUICtrlCreateButton("Move Joblists",15,40,165,25)
+$ResetJoblist = GUICtrlCreateButton("Reset all Joblists",15,70,165,25)
+$DeleteButton = GUICtrlCreateButton("Delete Joblists",15,100,165,25)
+$ExitButton = GUICtrlCreateButton("Exit",15,130,165,25)
 
 ; Close Group
 GUICtrlCreateGroup("",-99,-99,1,1)
-
+_WinAPI_SetLayeredWindowAttributes($JLbu, 0xABCDEF);, 125)
+GUISetBkColor(0xABCDEF)
 ; Show windows with buttons
 GuiSetState(@SW_SHOW)
 ;GUISetState()
@@ -270,18 +272,20 @@ $guimsg = GUIGetMsg()
 		 Case $guimsg = $RenameJoblist
 			RenameJoblist()
 			MsgBox(0,"Joblist Count","Joblists Count reset")
-		;Exit
+
+			Local $iPID = Run("explorer.exe " & "C:\Apps\EVO\Job")
+			WinWait("[CLASS:explorer]", "", 1)
+			Sleep(10)
+			ProcessClose($iPID)
+			MsgBox ($MB_ICONINFORMATION + $MB_TOPMOST + $MB_SETFOREGROUND, "", "Check Joblists!",5)
 		 Case $guimsg = $MoveJoblist
 			MoveJoblist()
 			MsgBox(0,"Move Joblist","Joblists moved to C:\APPS\EVO\JOB\JLbackup")
-		;Exit
 		 Case $guimsg = $ResetJoblist
 			Resetjoblist()
 			MsgBox(0,"Reset Joblist","Joblists resetted to C:\APPS\EVO\Job")
-		;Exit
 		 Case $guimsg = $ExitButton
 			Exit
-		;Exit
 		 Case $guimsg = $DeleteButton
 			Dim $iMsgBoxAnswer
 			$iMsgBoxAnswer = MsgBox(52,"DELETE Joblists"," Weet u dit heel erg zeker?")
@@ -290,7 +294,6 @@ $guimsg = GUIGetMsg()
 					DeleteJoblist()
 					MsgBox(64,"Joblist DELETE","Joblists Deleted")
 				Case $iMsgBoxAnswer = 7 ;No
-					;Exit
 					MsgBox(64,"Joblist DELETE","Joblists NOT Deleted")
 			EndSelect
 	EndSelect
