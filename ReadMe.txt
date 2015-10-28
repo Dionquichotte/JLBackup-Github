@@ -11,6 +11,7 @@ joblist filename: worklistnumber_robot_number.twl, for example 682_1_1.twl
 C:\apps\evo\job\ELx (x=1,2,3, etc)
 C:\apps\evo\JLBackup\
 C:\apps\evo\JLBackup\JLbackup.ini
+C:\ProgramData\Tecan\Evoware\AuditTrail\LOG\*.Log
 _________________________________________________________________________________________
 Button functionality:
 
