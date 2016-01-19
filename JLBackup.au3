@@ -131,14 +131,14 @@
 #include <ButtonConstants.au3>
 #include <TabConstants.au3>
 
-If not FileExists(@ScriptDir & "\Jlbackup.ini") then
-	Local $BlueAssay = "EL1=\682_2_" & @CRLF &"EL2=\923_2_" & @CRLF &"EL3=\683_2_" & @CRLF &"EL4=\697_2_" & @CRLF &"EL5=\800_2_" _
+If not FileExists(@ScriptDir & "\JLbackup.ini") then
+	Local $BlueAssay ="EL1=\682_2_" & @CRLF &"EL2=\923_2_" & @CRLF &"EL3=\683_2_" & @CRLF &"EL4=\697_2_" & @CRLF &"EL5=\800_2_" _
 	& @CRLF &"EL6=\856_2_" & @CRLF &"EL7=\922_2_" & @CRLF &"EL8=\999_2_" & @CRLF &"EL9=\998_2_"
 	Local $GreenAssay = "EL1=\682_1_" & @CRLF &"EL2=\923_1_" & @CRLF &"EL3=\683_1_" & @CRLF &"EL4=\697_1_" & @CRLF &"EL5 =\800_1_" _
 	& @CRLF &"EL6=\856_1_" & @CRLF &"EL7=\922_1_" & @CRLF &"EL8=\999_1_" & @CRLF &"EL9=\998_1_"
-	Local $ShortLC =  "JOB=C:\APPS\EVO\JOB"& @CRLF & "TPL=C:\APPS\EVO\TPL" & @CRLF & "ASC=C:\APPS\EVO\ASC" _
+	Local $ShortLC ="JOB=C:\APPS\EVO\JOB"& @CRLF & "TPL=C:\APPS\EVO\TPL" & @CRLF & "ASC=C:\APPS\EVO\ASC" _
 	& @CRLF & "TPLASC=C:\APPS\EVO\TPLASC" & @CRLF & "Archief=C:\APPS\EVO\Archief"
-	Local $ShortRC =  "EVOware=C:\ProgramFiles (x86)"& @CRLF & "AppData=C:\Users\Administrator\AppData" _
+	Local $ShortRC ="EVOware=C:\ProgramFiles (x86)\Tecan\Evoware"& @CRLF & "AppData=C:\Users\Administrator\AppData" _
 	& @CRLF & "ProgramData=C:\ProgramData\Tecan\Evoware" & @CRLF & "Documents=C:\Users\Administrator\Documents" & @CRLF & "PC=C:\"
 
 	IniWriteSection(@ScriptDir & "\Jlbackup.ini", "Blue", $BlueAssay)
@@ -161,7 +161,7 @@ $ShortcutsR = IniReadSection(@ScriptDir & "\Jlbackup.ini", "ShortcutsR")
 ; GUI Creation
 GUISetFont(9, 500, 2, 45)
 Global const $JLbu = GuiCreate("EVO Joblist Backup", 255, 205, -1, -1, -1, BitOr($WS_EX_TOOLWINDOW, $WS_EX_LAYERED, $WS_EX_TOPMOST)) ;BitOr($WS_EX_TRANSPARENT, $WS_EX_TOOLWINDOW , $WS_EX_LAYERED))
-GuiSetIcon("B:\Programmeren\programmeren_Dion\TECAN\EVO joblist backup Allergie\icons\JLbackup2.ico", 0)
+;GuiSetIcon("C:\Users\Administrator\Laboratorium\programWerk\TECAN\JLbackup_Biologicals\icons\JLbackup3.ico", 0)
 ;DllCall("user32.dll", "int", "AnimateWindow", "hwnd", $JLbu, "int", 1000, "long", 0x00080000) ; fade-in
 
 $Tab1 = GUICtrlCreateTab(8, 8, 240, 190)
