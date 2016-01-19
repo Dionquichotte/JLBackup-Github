@@ -28,6 +28,7 @@
 ;			Shortcuts assigned in ini file
 ;			Removed obsolete 'Move' and 'Reset' joblist function
 ;			Gui always on top: Guicreate... $WS_EX_TOPMOST
+;			MsgBox-es always on top
 ;
 ; *******************************************************************************************************************************************************
 ;
@@ -267,13 +268,13 @@ $guimsg = GUIGetMsg()
 			Exit
 		 Case $guimsg = $DeleteButton
 			Dim $iMsgBoxAnswer
-			$iMsgBoxAnswer = MsgBox(52,"DELETE Joblists"," Weet u dit heel erg zeker?")
+			$iMsgBoxAnswer = MsgBox($MB_YESNO + $MB_TOPMOST + $MB_SETFOREGROUND,"DELETE Joblists"," Weet u dit heel erg zeker?")
 			Select
 				Case $iMsgBoxAnswer = 6 ;Yes
 					DeleteJoblist()
-					MsgBox(64,"Joblist DELETE","Joblists Deleted")
+					MsgBox($MB_ICONINFORMATION + $MB_TOPMOST + $MB_SETFOREGROUND,"Joblist DELETE","Joblists Deleted")
 				Case $iMsgBoxAnswer = 7 ;No
-					MsgBox(64,"Joblist DELETE","Joblists NOT Deleted")
+					MsgBox($MB_ICONINFORMATION + $MB_TOPMOST + $MB_SETFOREGROUND,"Joblist DELETE","Joblists NOT Deleted")
 			EndSelect
 	EndSelect
 Wend
